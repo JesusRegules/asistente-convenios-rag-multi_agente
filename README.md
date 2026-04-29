@@ -2,13 +2,13 @@
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg) ![AWS](https://img.shields.io/badge/AWS-Cloud_Architecture-FF9900.svg) ![Streamlit](https://img.shields.io/badge/Streamlit-UI-FF4B4B.svg) ![OpenSearch](https://img.shields.io/badge/OpenSearch-Vector_DB-005EB8.svg) ![Selenium](https://img.shields.io/badge/Selenium-RPA-43B02A.svg)
 
-![Demostración de la aplicación](images/demo.gif)
+![Demostración de la aplicación](image/demo.gif)
 
 ## Descripción del Proyecto
 Este proyecto es el resultado de un Trabajo de Fin de Máster (TFM) especializado en Inteligencia Artificial. Consiste en una arquitectura avanzada de Generación Aumentada por Recuperación (RAG) diseñada para el dominio LegalTech. El sistema actúa como un asistente virtual capaz de procesar, indexar y consultar convenios colectivos españoles, ofreciendo respuestas fundamentadas, extracción literal de articulado y soporte multimodal (voz y texto).
 
 ### Flujo General del Sistema 
-![Diagrama de Flujo General](images/diagrama_flujo.png)
+![Diagrama de Flujo General](image/diagrama_flujo.png)
 
 ## Características Principales
 * **Extracción automatizada (RPA):** Integración de un proceso headless mediante Selenium que navega por el portal gubernamental REGCON para descargar convenios colectivos en tiempo real a partir del NIF de una empresa.
@@ -36,11 +36,11 @@ El código fuente sigue el principio de responsabilidad única, dividiendo el si
 El diseño de despliegue sigue los pilares del **AWS Well-Architected Framework**, garantizando el aislamiento de datos sensibles requerido en el sector LegalTech.
 
 ### Opción A: Despliegue Híbrido (MVP Cost-Optimized)
-![Arquitectura AWS Híbrida](images/diagrama_hibrido.png)
+![Arquitectura AWS Híbrida](image/diagrama_hibrido.png)
 Diseñada para un lanzamiento ágil. La aplicación corre aislada en Amazon ECS (Fargate) en una subred privada. El tráfico sale controladamente por un NAT Gateway exclusivo para ejecutar el RPA y consultar la API de inferencia, abaratando costes iniciales.
 
 ### Opción B: Evolución Enterprise (100% AWS Native)
-![Arquitectura AWS Nativa](images/diagrama_nativo.png)
+![Arquitectura AWS Nativa](image/diagrama_nativo.png)
 Arquitectura objetivo. Se reemplazan las APIs externas por **Amazon Bedrock** conectado mediante AWS PrivateLink (VPC Interface Endpoints). Esto garantiza que el tráfico de Inteligencia Artificial nunca abandone la red interna de AWS, asegurando un *Compliance* absoluto.
 
 ### Comparativa de Arquitecturas
