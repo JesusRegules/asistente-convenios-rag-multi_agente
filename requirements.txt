@@ -1,0 +1,11 @@
+streamlit
+python-dotenv
+audio-recorder-streamlit
+opensearch-py
+sentence-transformers
+PyMuPDF
+transformers
+requests
+edge-tts
+selenium
+webdriver-manager
