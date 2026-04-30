@@ -20,9 +20,9 @@ Este proyecto es el resultado de un Trabajo de Fin de Máster (TFM) especializad
 El sistema está diseñado pensando en el ciclo de vida del modelo de lenguaje (LLMOps) y su mantenimiento a largo plazo:
 
 * **Enrutamiento de modelos (Model Routing):** Se utiliza un modelo rápido y de bajo coste (`Llama-3.1-8b-instant`) como guardarraíl inicial para validar la intención del usuario. Solo para la extracción compleja y razonamiento jurídico se invoca un modelo de gran capacidad (`Llama-3.3-70b-versatile`).
-* **Caché cruzada computacional O(1):** El sistema inyecta en OpenSearch el identificador fiscal (`nif_id`) y la huella digital del archivo (`hash_id` vía SHA-256). Esto permite verificar la existencia previa del vectorizado en tiempo constante, saltando la fase de ingesta para convenios recurrentes.
+* **Diseño de Caché cruzada computacional O(1):** El sistema inyecta metadatos clave (`nif_id` y `hash_id` vía SHA-256) en los fragmentos vectorizados. En un despliegue con base de datos duradera (como se plantea en la arquitectura Cloud), esta estructura de datos permite verificar la existencia previa de un convenio en tiempo constante, evitando disparar innecesariamente el motor RPA o el pesado pipeline de procesamiento NLP para consultas recurrentes.
 * **Telemetría y preparación para RLHF:** El sistema traza el contexto recuperado, el prompt exacto y la respuesta generada. En la implementación actual (MVP), estos logs se persisten de forma asíncrona mediante un *Mock local* (`telemetria.json`), sentando las bases de la arquitectura objetivo que inyectará estos datos en Amazon DynamoDB para futuros procesos de *Reinforcement Learning from Human Feedback*.
-* **Monitorización y Evaluación Continua (Drift):** Dado que en un entorno conversacional no existe un *Ground Truth* estático, la arquitectura contempla el uso de métricas sin referencia (*Reference-free metrics*) como RAGAS. Se utilizará un patrón *LLM-as-a-Judge* sobre los logs de telemetría para monitorizar la Fidelidad (*Faithfulness*), la Relevancia de la Respuesta y la Precisión del Contexto, evitando la degradación del sistema.
+* **Fundamentos para la Evaluación Continua (Drift):** Para evitar la degradación del sistema en producción, es necesario monitorizar el modelo. Lo implementado actualmente en el código es la capa base de observabilidad: un sistema de logging (`telemetria.json`) que captura el contexto exacto, el prompt del usuario y la salida generada. A nivel de diseño, la arquitectura contempla usar esta materia prima para aplicar un patrón *LLM-as-a-Judge* con métricas sin referencia como **RAGAS**, permitiendo evaluar asíncronamente la Fidelidad (*Faithfulness*) y Relevancia de la respuesta.
 
 ## Arquitectura del Software Desacoplada
 El código fuente sigue el principio de responsabilidad única, dividiendo el sistema en los siguientes módulos dentro de la carpeta `src/`:
@@ -37,11 +37,11 @@ El diseño de despliegue sigue los pilares del **AWS Well-Architected Framework*
 
 ### Opción A: Despliegue Híbrido (MVP Cost-Optimized)
 ![Arquitectura AWS Híbrida](Image/diagrama_hibrido.png)
-Diseñada para un lanzamiento ágil. La aplicación corre aislada en Amazon ECS (Fargate) en una subred privada. El tráfico sale controladamente por un NAT Gateway exclusivo para ejecutar el RPA y consultar la API de inferencia, abaratando costes iniciales.
+Diseñada como un Producto Mínimo Viable (MVP) enfocado en el *Time-to-Market* y la optimización de costes. El cómputo principal se ejecuta sin servidores mediante contenedores en **Amazon ECS (Fargate)**, aislados en una subred privada y protegidos en la capa de borde por un **Application Load Balancer (ALB)** acoplado a un **AWS WAF**. El tráfico exterior está estrictamente limitado: un **NAT Gateway** permite la salida de las peticiones RPA (Selenium) y la comunicación cifrada con la API de inferencia externa (Groq). Para la persistencia de datos (S3) y telemetría (DynamoDB), se implementan **VPC Gateway Endpoints** a nivel de enrutamiento interno, evitando sobrecostes por transferencia en el NAT.
 
 ### Opción B: Evolución Enterprise (100% AWS Native)
 ![Arquitectura AWS Nativa](Image/diagrama_nativo.png)
-Arquitectura objetivo. Se reemplazan las APIs externas por **Amazon Bedrock** conectado mediante AWS PrivateLink (VPC Interface Endpoints). Esto garantiza que el tráfico de Inteligencia Artificial nunca abandone la red interna de AWS, asegurando un *Compliance* absoluto.
+Arquitectura objetivo diseñada para cumplir con los máximos estándares de seguridad. El núcleo del cambio reside en la sustitución de las APIs externas por modelos fundacionales gestionados en **Amazon Bedrock** e IA de voz nativa (Transcribe/Polly). A nivel de red, la comunicación con estos servicios se realiza a través de **VPC Interface Endpoints (AWS PrivateLink)**, inyectando interfaces de red (ENIs) directamente en la subred privada. Esto garantiza que todo el flujo de Inteligencia Artificial viaje exclusivamente por la red troncal de AWS sin tocar internet público, asegurando una arquitectura *Zero Trust* y un *Compliance* absoluto frente al RGPD.
 
 ### Comparativa de Arquitecturas
 | Característica | Opción A (Híbrida) | Opción B (Nativa) |
@@ -54,7 +54,21 @@ Arquitectura objetivo. Se reemplazan las APIs externas por **Amazon Bedrock** co
 ## Requisitos e Instalación Local
 
 ### 1. Preparar el entorno
+
+Es altamente recomendable utilizar un entorno virtual (venv) para aislar las dependencias del proyecto.
 ```bash
+# 1. Clonar el repositorio
 git clone [URL_DE_TU_REPOSITORIO]
 cd [NOMBRE_DEL_DIRECTORIO]
+
+# 2. Crear el entorno virtual
+python -m venv venv
+
+# 3. Activar el entorno virtual
+# En Windows:
+venv\Scripts\activate
+# En macOS/Linux:
+# source venv/bin/activate
+
+# 4. Instalar las dependencias
 pip install -r requirements.txt
